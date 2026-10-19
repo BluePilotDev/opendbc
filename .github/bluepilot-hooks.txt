@@ -4,7 +4,6 @@
 
 .github/workflows/auto_pr_review.yaml  # upstream's welcome comment, inert in forks
 .github/workflows/release.yml          # upstream automation, inert in forks
-.github/workflows/stale.yml            # upstream automation, inert in forks
 .github/workflows/tests.yml            # also runs on bg-clean; longer test-models timeout for cold caches
 .github/workflows/update-cars-docs.yml # upstream automation, inert in forks
 .github/workflows/update-uv-lock.yml   # upstream automation, inert in forks
