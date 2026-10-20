@@ -13,7 +13,7 @@ import unittest
 
 import numpy as np
 
-from opendbc.car import scale_tire_stiffness
+from opendbc.car import scale_tire_stiffness_per_mass
 from opendbc.car.ford.values import CAR
 from opendbc.car.structs import CarParams
 from opendbc.car.vehicle_model import VehicleModel, calc_slip_factor
@@ -62,12 +62,12 @@ class BPPinionMixin:
     # 0.1 deg DBC quantization in curvature CAN units at this speed, +2 for float rounding
     return int(np.radians(0.1) * self._curvature_factor(speed) / self.PINION_STEER_RATIO * CURVATURE_TO_CAN) + 2
 
-  def _pinion_msg(self, curvature: float, speed: float, quality_flag=True):
+  def _pinion_msg(self, curvature: float, speed: float, quality_flag=True, bus=0):
     values = {"StePinComp_An_Est": self._curvature_to_pinion_angle_deg(curvature, speed),
               "StePinCompAnEst_D_Qf": 3 if quality_flag else 0,
               "StePinAn_No_Cnt": self.cnt_pinion % 16}
     self.__class__.cnt_pinion += 1
-    return self.packer.make_can_msg_safety("SteeringPinion_Data", 0, values)
+    return self.packer.make_can_msg_safety("SteeringPinion_Data", bus, values)
 
   def _reset_curvature_measurement(self, curvature, speed):
     # 14 frames, not 6: after a counter discontinuity (rejected bad-QF frames still advance the
@@ -126,6 +126,15 @@ class BPPinionMixin:
     self.assertGreater(before, 0)
     for _ in range(6):
       self.assertFalse(self._rx(self._pinion_msg(0, speed, quality_flag=False)))
+    self.assertEqual(self.safety.get_curvature_meas_max(), before)
+
+  def test_pinion_other_bus_ignored(self):
+    # only the main bus pinion frame feeds the measurement (its rx check entry is bus 0; ford_bp_rx_hook also matches the bus)
+    speed = CURVATURE_ERROR_MIN_SPEED + 5
+    self._reset_curvature_measurement(0.005, speed)
+    before = self.safety.get_curvature_meas_max()
+    for _ in range(6):
+      self._rx(self._pinion_msg(-0.005, speed, bus=2))
     self.assertEqual(self.safety.get_curvature_meas_max(), before)
 
   def test_pinion_sign_convention(self):
@@ -196,12 +205,11 @@ class TestFordBPPinionGeometryTable(unittest.TestCase):
     specs = car.config.specs
     wheelbase = FORD_PINION_WHEELBASE.get(car, specs.wheelbase)
     CP = CarParams()
-    CP.mass = specs.mass
     CP.wheelbase = wheelbase
     CP.steerRatio = specs.steerRatio
     CP.centerToFront = wheelbase * specs.centerToFrontRatio
     CP.tireStiffnessFactor = specs.tireStiffnessFactor
-    CP.tireStiffnessFront, CP.tireStiffnessRear = scale_tire_stiffness(CP.mass, CP.wheelbase, CP.centerToFront, CP.tireStiffnessFactor)
+    CP.tireStiffnessFrontPerMass, CP.tireStiffnessRearPerMass = scale_tire_stiffness_per_mass(CP.wheelbase, CP.centerToFront, CP.tireStiffnessFactor)
     slip_factor = calc_slip_factor(VehicleModel(CP))
 
     slip, sr, wb = GEOMETRY[idx]
