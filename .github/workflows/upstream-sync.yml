@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   sync:
-    if: github.repository == 'ford-op/bg-opendbc'
+    if: github.repository == 'BluePilotDev/opendbc'
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     steps:
