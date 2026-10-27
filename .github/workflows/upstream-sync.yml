@@ -1,8 +1,8 @@
-# BluePilot: nightly upstream sync (spec: #18). Fast-forwards `master` to sunnypilot/opendbc
+# BluePilot: nightly upstream sync (spec: ford-op/bg-opendbc#18). Fast-forwards `master` to sunnypilot/opendbc
 # `master` and keeps one PR open from `master` into `bp-opendbc`. It merges that PR itself (merge commit)
-# only when it's clean, no conflicts and no file both sides changed, and `bp-opendbc`'s required checks
-# pass (#102); anything else waits for a person. It never force-pushes: if `master` is not a
-# fast-forward of upstream it stops and opens an issue.
+# only when it's clean (no conflicts; files both sides changed are listed but don't block) and
+# `bp-opendbc`'s required checks pass (#3); a conflict waits for a person. It never force-pushes:
+# if `master` is not a fast-forward of upstream it stops and opens an issue.
 name: upstream sync
 
 on:
@@ -83,16 +83,16 @@ jobs:
         grep -qE '^[0-9a-f]{40}$' <<<"$(head -n1 <<<"$out")" || { echo "::error::merge-tree failed"; exit 1; }
         conflicts=$(tail -n +2 <<<"$out" | sed 's/^/- /')
         overlap=$(comm -12 <(git diff --name-only "$base" "$up" | sort) <(git diff --name-only "$base" "$integration" | sort) | sed 's/^/- /')
-        clean=$([ -z "$conflicts$overlap" ] && echo yes || echo no)
+        clean=$([ -z "$conflicts" ] && echo yes || echo no)
         {
-          echo "Automated nightly sync of sunnypilot/opendbc \`master\` into \`$INTEGRATION\` (#18). Upstream \`${base:0:8}..${up:0:8}\`."
+          echo "Automated nightly sync of sunnypilot/opendbc \`master\` into \`$INTEGRATION\` (ford-op/bg-opendbc#18). Upstream \`${base:0:8}..${up:0:8}\`."
           echo
           echo "**Merge with a merge commit, not squash, and don't delete the branch.** The head is \`$MIRROR\` itself; a squash leaves upstream's commits out of \`$INTEGRATION\` and the job reopens this PR every night."
           echo
           if [ "$clean" = yes ]; then
-            echo "✅ Clean (no conflicts, no file both sides changed): the job merges this itself once the required checks pass (#102)."
+            echo "✅ No conflicts: the job merges this itself once the required checks pass (#3). Files both sides changed are listed below; the required checks cover them."
           else
-            echo "⚠️ Not clean: this waits for a person (#102)."
+            echo "❌ Conflicts: this waits for a person (#3)."
           fi
           echo
           echo "### Upstream commits"
@@ -116,7 +116,7 @@ jobs:
           pr=${pr##*/}
         fi
         { echo "pr=$pr"; echo "up=$up"; echo "clean=$clean"; } >> "$GITHUB_OUTPUT"
-    # BluePilot (#102): a clean sync can't change what bp-sunnypilot runs (it pins opendbc_repo) or lateral
+    # BluePilot (#3): a clean sync can't change what bp-sunnypilot runs (it pins opendbc_repo) or lateral
     # behavior (the library), and bp-opendbc's required checks still gate it, so it merges itself on green.
     # a fresh App token: the wait below can outlast the first one (App tokens last an hour)
     - uses: actions/create-github-app-token@v2
