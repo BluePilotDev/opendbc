@@ -1,13 +1,13 @@
 # BluePilot: nightly upstream sync (spec: #18). Fast-forwards `master` to sunnypilot/opendbc
-# `master` and keeps one PR open from `master` into `bg-clean`. It merges that PR itself (merge commit)
-# only when it's clean, no conflicts and no file both sides changed, and `bg-clean`'s required checks
+# `master` and keeps one PR open from `master` into `bp-opendbc`. It merges that PR itself (merge commit)
+# only when it's clean, no conflicts and no file both sides changed, and `bp-opendbc`'s required checks
 # pass (#102); anything else waits for a person. It never force-pushes: if `master` is not a
 # fast-forward of upstream it stops and opens an issue.
 name: upstream sync
 
 on:
   schedule:
-    - cron: '17 3 * * *'  # nightly, 03:17 UTC: four hours ahead of bp-sunnypilot's sync, which reads bg-clean
+    - cron: '17 3 * * *'  # nightly, 03:17 UTC: four hours ahead of bp-sunnypilot's sync, which reads bp-opendbc
   workflow_dispatch:
 
 permissions: {}
@@ -39,7 +39,7 @@ jobs:
         REPO: ${{ github.repository }}
         UPSTREAM_URL: https://github.com/sunnypilot/opendbc.git
         MIRROR: master
-        INTEGRATION: bg-clean
+        INTEGRATION: bp-opendbc
       run: |
         set -euo pipefail
         git fetch --no-tags origin "$MIRROR" "$INTEGRATION"
@@ -117,7 +117,7 @@ jobs:
         fi
         { echo "pr=$pr"; echo "up=$up"; echo "clean=$clean"; } >> "$GITHUB_OUTPUT"
     # BluePilot (#102): a clean sync can't change what bp-sunnypilot runs (it pins opendbc_repo) or lateral
-    # behavior (the library), and bg-clean's required checks still gate it, so it merges itself on green.
+    # behavior (the library), and bp-opendbc's required checks still gate it, so it merges itself on green.
     # a fresh App token: the wait below can outlast the first one (App tokens last an hour)
     - uses: actions/create-github-app-token@v2
       id: app2
@@ -134,7 +134,7 @@ jobs:
         UP: ${{ steps.sync.outputs.up }}
       run: |
         set -euo pipefail
-        # bg-clean's required checks (its branch protection; the App can't read protection, so they're
+        # bp-opendbc's required checks (its branch protection; the App can't read protection, so they're
         # listed, as in bluepilot-lateral's release_bumps.sh)
         REQUIRED=("./test.sh (Linux)" "safety" "bluepilot-safety" "bluepilot-hooks")
         wait_required() {  # 0 all passed, 1 one failed, 2 still running after about 50 minutes

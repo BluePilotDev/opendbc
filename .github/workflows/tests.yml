@@ -5,7 +5,7 @@ on:
     branches:
       - master
       # BluePilot: also run on merges into the integration branch
-      - bg-clean
+      - bp-opendbc
   pull_request:
 
 jobs:

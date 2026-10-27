@@ -1,10 +1,10 @@
-# BluePilot: the upstream files bg-clean may change (#47). Every file that exists on master and
+# BluePilot: the upstream files bp-opendbc may change (#47). Every file that exists on master and
 # differs from it in a PR's merge result must be listed here, with the reason; anything else fails
 # the bluepilot-hooks check. Prefer moving code under opendbc/bluepilot_lateral/ to adding a line.
 
 .github/workflows/auto_pr_review.yaml  # upstream's welcome comment, inert in forks
 .github/workflows/release.yml          # upstream automation, inert in forks
-.github/workflows/tests.yml            # also runs on pushes to bg-clean; its jobs fetch the library submodule
+.github/workflows/tests.yml            # also runs on pushes to bp-opendbc; its jobs fetch the library submodule
 .github/workflows/update-cars-docs.yml # upstream automation, inert in forks
 .github/workflows/update-uv-lock.yml   # upstream automation, inert in forks
 opendbc/car/ford/carcontroller.py      # one BluePilotLateral object, stock path as the fallback (#45)
